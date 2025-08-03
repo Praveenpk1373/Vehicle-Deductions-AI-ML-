@@ -23,14 +23,12 @@ st.set_page_config(page_title="Vehicle Detection & Society Analysis", layout="wi
 st.title("Vehicle Detection & Society Traffic Insights")
 st.markdown("Upload a video to detect and analyze traffic using AI. Includes social impact insights!")
 
-# --- VIDEO UPLOAD ---
-uploaded_file = st.file_uploader("📤 Upload your traffic video", type=["mp4", "avi", "mov"])
+uploaded_file = st.file_uploader("Upload your traffic video", type=["mp4", "avi", "mov"])
 if uploaded_file:
     tfile = tempfile.NamedTemporaryFile(delete=False)
     tfile.write(uploaded_file.read())
     video_path = tfile.name
 
-    # --- DETECTION ---
     st.markdown("### 🔍 Detection Progress")
     progress = st.progress(0)
     stframe = st.empty()
@@ -63,7 +61,6 @@ if uploaded_file:
             track_id = int(box.id[0]) if box.id is not None else None
             class_name = model.names[cls_id]
 
-            # Handle scooter vs motorcycle aliasing
             if class_name == "motorcycle":
                 class_name = "scooter"
 
@@ -91,44 +88,38 @@ if uploaded_file:
     total_time = time.time() - start_time
     fps = frame_id / total_time
 
-    # --- RESULTS ---
-    st.success("✅ Detection Completed")
-    st.markdown(f"🕒 **Processing Time:** {total_time:.2f} seconds")
-    st.markdown(f"🎥 **Frames Processed:** {frame_id} ({fps:.2f} FPS)")
+    st.success("Detection Completed")
+    st.markdown(f"**Processing Time:** {total_time:.2f} seconds")
+    st.markdown(f"**Frames Processed:** {frame_id} ({fps:.2f} FPS)")
 
-    # Prepare dataframe
     df = pd.DataFrame({
         "Vehicle Type": list(vehicle_counts.keys()),
         "Count": list(vehicle_counts.values())
     }).sort_values(by="Count", ascending=False)
 
-    st.markdown("### 📊 Vehicle Count Summary")
+    st.markdown("### Vehicle Count Summary")
     st.dataframe(df)
 
-    # Plot chart
     fig = px.bar(df, x="Vehicle Type", y="Count", color="Vehicle Type", title="Vehicle Count Chart")
     st.plotly_chart(fig)
 
-    # Save CSV
     timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
     csv_filename = f"vehicle_report_{timestamp}.csv"
     df.to_csv(csv_filename, index=False)
     with open(csv_filename, "rb") as f:
-        st.download_button("⬇️ Download Report (CSV)", f, file_name=csv_filename)
+        st.download_button("Download Report (CSV)", f, file_name=csv_filename)
 
-    # --- SOCIETY ANALYSIS ---
     total_vehicles = df["Count"].sum()
     congestion_level = "High" if total_vehicles > 30 else "Moderate" if total_vehicles > 10 else "Low"
     noise_count = df[df["Vehicle Type"].isin(["truck", "bus", "auto-rickshaw"])].sum()["Count"]
     noise_level = "High" if noise_count > 10 else "Medium"
     most_common = df.loc[df["Count"].idxmax()]["Vehicle Type"] if not df.empty else "None"
 
-    st.markdown("### 🧠 Society Impact Analysis")
-    st.markdown(f"**Traffic Congestion:** 🚦 {congestion_level}")
-    st.markdown(f"**Estimated Noise Level:** 🔊 {noise_level}")
-    st.markdown(f"**Most Common Vehicle:** 🏍️ {most_common}")
+    st.markdown("### Society Impact Analysis")
+    st.markdown(f"**Traffic Congestion:**  {congestion_level}")
+    st.markdown(f"**Estimated Noise Level:**  {noise_level}")
+    st.markdown(f"**Most Common Vehicle:**  {most_common}")
 
-    # --- PDF REPORT ---
     pdf_filename = f"vehicle_report_{timestamp}.pdf"
     pdf = FPDF()
     pdf.add_page()
@@ -153,4 +144,5 @@ if uploaded_file:
     pdf.output(pdf_filename)
 
     with open(pdf_filename, "rb") as f:
-        st.download_button("📄 Download PDF Report", f, file_name=pdf_filename)
+        st.download_button("Download PDF Report", f, file_name=pdf_filename)
+
